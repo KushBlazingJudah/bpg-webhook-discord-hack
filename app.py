@@ -68,27 +68,31 @@ def push(post):
     })
 
 while True:
-    if THREAD_NUMBER == 0:
-        # look for thread
-        res = requests.get(f'https://a.4cdn.org/{BOARD}/catalog.json')
-        for page in res.json():
-            for thread in page.get('threads', []):
-                if re.search(REGEX_TITLE, thread.get('sub', "")) and re.search(REGEX_COMMENT, thread.get('com', ""), re.MULTILINE):
-                    THREAD_NUMBER = thread.get('no')
-                    print(f"found thread {THREAD_NUMBER}")
-                    break
-            if THREAD_NUMBER != 0:
-                break
+    try:
         if THREAD_NUMBER == 0:
-            time.sleep(CHECK_THREAD * 60)
-            continue
+            # look for thread
+            res = requests.get(f'https://a.4cdn.org/{BOARD}/catalog.json')
+            for page in res.json():
+                for thread in page.get('threads', []):
+                    if re.search(REGEX_TITLE, thread.get('sub', "")) and re.search(REGEX_COMMENT, thread.get('com', ""), re.MULTILINE):
+                        THREAD_NUMBER = thread.get('no')
+                        print(f"found thread {THREAD_NUMBER}")
+                        break
+                if THREAD_NUMBER != 0:
+                    break
+            if THREAD_NUMBER == 0:
+                time.sleep(CHECK_THREAD * 60)
+                continue
 
-    new = fetch()
-    print(f"{new} new posts")
+        new = fetch()
+        print(f"{new} new posts")
 
-    if new > 0:
-        for post in CACHE[-new:]:
-            print(f"pushing {post['no']}")
-            push(post)
+        if new > 0:
+            for post in CACHE[-new:]:
+                print(f"pushing {post['no']}")
+                push(post)
 
-    time.sleep(CHECK_POSTS * 60)
+        time.sleep(CHECK_POSTS * 60)
+    except Exception as e:
+        print(e)
+        time.sleep(30)

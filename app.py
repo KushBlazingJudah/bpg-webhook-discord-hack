@@ -80,12 +80,15 @@ while True:
             if THREAD_NUMBER != 0:
                 break
         if THREAD_NUMBER == 0:
-            time.sleep(CHECK_THREAD * 1000 * 60)
+            time.sleep(CHECK_THREAD * 60)
             continue
 
     new = fetch()
+    print(f"{new} new posts")
 
-    for post in CACHE[:-new]:
-        push(post)
+    if new > 0:
+        for post in CACHE[-new:]:
+            print(f"pushing {post['no']}")
+            push(post)
 
-    time.sleep(CHECK_POSTS * 1000 * 60)
+    time.sleep(CHECK_POSTS * 60)

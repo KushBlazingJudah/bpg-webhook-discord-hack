@@ -1,5 +1,4 @@
 import requests
-import json
 import time
 import re
 import html
@@ -15,6 +14,9 @@ THREAD_NUMBER = 0
 LAST_FETCH = 0
 CACHE = []
 
+BUCKET_LEFT = -1
+BUCKET_RESET = 0
+
 # inb4 you didn't compile!
 REGEX_CITE = "<a.*class=\"quotelink\">&gt;&gt;(\d+)</a>"
 REGEX_DEADLINK = "<span.*class=\"deadlink\">&gt;&gt;(\d+)</span>"
@@ -22,6 +24,27 @@ REGEX_QUOTE = "<span.*class=\"quote\">&gt;(.*)</span>"
 REGEX_CODE = "<pre class=\"prettyprint\">([\s\S]*?)</pre>" # TODO: fix
 REGEX_TITLE = "^/bpg/ - The Beginner Programmer&#039;s General"
 REGEX_COMMENT = ".*https://rentry.co/bpg.*discord gg YfBUDU7GYn.*"
+
+def set_ratelimit(req):
+    global BUCKET_LEFT, BUCKET_RESET
+    if req.status_code == 429 or req.json().get('message') == "You are being rate limited.":
+        BUCKET_LEFT = 0
+        BUCKET_RESET = time.time() + (float(req.json().get('retry_after')) / 1000)
+        return
+
+    try:
+        BUCKET_LEFT = int(req.headers.get('X-RateLimit-Remaining'))
+        BUCKET_RESET = float(req.headers.get('X-RateLimit-Reset'))
+    except ValueError:
+        print("discord returned invalid headers?\nremaining: {req.headers.get('X-RateLimit-Remaining')}\nreset at: {req.headers.get('X-RateLimit-Reset')}")
+        print("leaving values as is")
+    except IndexError:
+        print("discord didn't return ratelimit headers")
+
+def wait_ratelimit():
+    print(BUCKET_LEFT, BUCKET_RESET, time.time())
+    if BUCKET_LEFT == 0:
+        time.sleep(BUCKET_RESET - time.time())
 
 def fetch() -> list:
     global BOARD, THREAD_NUMBER, CACHE
@@ -58,14 +81,21 @@ def fixup(post):
 
     return text
 
-def display(post):
-    print(f"No. {post['no']}:\n{fixup(post)}")
-
 def push(post):
+    wait_ratelimit()
+
     res = requests.post(WEBHOOK_URL, json={
         'content': fixup(post),
         'username': f"/bpg/ thread: No. {post['no']}"
     })
+
+    set_ratelimit(res)
+
+    if res.status_code != 200:
+        print(f"error pushing {post['no']}\n", res.json())
+        return False
+
+    return True
 
 while True:
     try:
@@ -90,9 +120,18 @@ while True:
         if new > 0:
             for post in CACHE[-new:]:
                 print(f"pushing {post['no']}")
-                push(post)
+                if not push(post):
+                    print(f"retrying {post['no']}")
+                    for i in range(3):
+                        print(f"try {i}")
+                        if not push(post):
+                            if i == 3:
+                                print("failed post")
+                            continue
+                        break
 
         time.sleep(CHECK_POSTS * 60)
     except Exception as e:
         print(e)
+        print("waiting 30 seconds due to exception")
         time.sleep(30)

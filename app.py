@@ -23,7 +23,7 @@ REGEX_DEADLINK = "<span.*class=\"deadlink\">&gt;&gt;(\d+)</span>"
 REGEX_QUOTE = "<span.*class=\"quote\">&gt;(.*)</span>"
 REGEX_CODE = "<pre class=\"prettyprint\">([\s\S]*?)</pre>" # TODO: fix
 REGEX_TITLE = "^/bpg/ - The Beginner Programmer&#039;s General"
-REGEX_COMMENT = ".*https://rentry.co/bpg.*discord gg YfBUDU7GYn.*"
+REGEX_COMMENT = ".*https://rentry.co/bpg.*discord dot gg slash YfBUDU7GYn.*"
 
 def set_ratelimit(req):
     global BUCKET_LEFT, BUCKET_RESET

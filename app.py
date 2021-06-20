@@ -23,7 +23,7 @@ REGEX_DEADLINK = "<span.*class=\"deadlink\">&gt;&gt;(\d+)</span>"
 REGEX_QUOTE = "<span.*class=\"quote\">&gt;(.*)</span>"
 REGEX_CODE = "<pre class=\"prettyprint\">([\s\S]*?)</pre>" # TODO: fix
 REGEX_TITLE = "^/bpg/ - The Beginner Programmer&#039;s General"
-REGEX_COMMENT = ".*https://rentry.co/bpg.*discord dot gg slash YfBUDU7GYn.*"
+REGEX_COMMENT = ".*https://rentry.co/bpg.*"
 
 def set_ratelimit(req):
     global BUCKET_LEFT, BUCKET_RESET
@@ -36,7 +36,7 @@ def set_ratelimit(req):
         BUCKET_LEFT = int(req.headers.get('X-RateLimit-Remaining'))
         BUCKET_RESET = float(req.headers.get('X-RateLimit-Reset'))
     except ValueError:
-        print("discord returned invalid headers?\nremaining: {req.headers.get('X-RateLimit-Remaining')}\nreset at: {req.headers.get('X-RateLimit-Reset')}")
+        print(f"discord returned invalid headers?\nremaining: {req.headers.get('X-RateLimit-Remaining')}\nreset at: {req.headers.get('X-RateLimit-Reset')}")
         print("leaving values as is")
     except IndexError:
         print("discord didn't return ratelimit headers")

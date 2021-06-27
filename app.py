@@ -53,10 +53,13 @@ def fetch() -> list:
     if res.status_code != 200:
         print(res.content)
         return 0
+
     new = len(res.json()["posts"]) - len(CACHE)
     CACHE = res.json()["posts"]
-    if res.json().get("archived", 0) == 1:
-        THREAD_NUMBER = 1
+
+    if res.json().get("archived", 0) == 1 or res.json().get("closed", 0) == 1:
+        THREAD_NUMBER = 0
+
     return new
 
 def fixup(post):
